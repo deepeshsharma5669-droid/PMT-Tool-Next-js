@@ -58,6 +58,21 @@ export async function requireDepartment(dept: string): Promise<PmtUser> {
   )
 }
 
+/**
+ * Task-management guard — unlike requireDepartment(), Admin does NOT
+ * qualify. Normal task-management mutations (create/assign/edit/reorder/
+ * deadline/Change Task creation) are exclusively the owning department
+ * Manager's authority; Admin's role is oversight/audit only. Requires an
+ * ACTIVE Manager whose own dept matches the resource's dept.
+ */
+export async function requireTaskManager(dept: string): Promise<PmtUser> {
+  const pmtUser = await requirePmtUser()
+  if (pmtUser.role === 'MANAGER' && pmtUser.dept === dept) return pmtUser
+  throw new ForbiddenError(
+    `User ${pmtUser.id} (role=${pmtUser.role}, dept=${pmtUser.dept}) is not an authorized task manager for department "${dept}".`
+  )
+}
+
 /** The task's assignee themself — never derived from a client-supplied assigneeId. */
 export async function requireTaskAssignee(taskAssigneeId: string): Promise<PmtUser> {
   const pmtUser = await requirePmtUser()
