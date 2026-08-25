@@ -1,0 +1,2 @@
+import{requirePmtUser}from'@/lib/auth/session';import{AppShell}from'@/components/shell/app-shell';import{RoleDashboard}from'@/components/dashboard/role-dashboard';import{loadDashboardData}from'@/lib/dashboard/data'
+export default async function DashboardPage(){const user=await requirePmtUser();const data=await loadDashboardData(user);return <AppShell user={user}><RoleDashboard user={user} data={data}/></AppShell>}

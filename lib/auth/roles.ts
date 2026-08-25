@@ -1,15 +1,8 @@
 import type { PmtUser, Role } from './types'
 
 /** Where an ACTIVE role lands after login. */
-export function roleHome(role: Role): string {
-  switch (role) {
-    case 'ADMIN':
-      return '/admin'
-    case 'MANAGER':
-      return '/manager'
-    case 'MEMBER':
-      return '/member'
-  }
+export function roleHome(_role: Role): string {
+  return '/dashboard'
 }
 
 /**

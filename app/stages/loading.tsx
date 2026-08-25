@@ -1,0 +1,1 @@
+export default function Loading(){return <div className="page-container" aria-busy="true"><div className="dashboard-skeleton dashboard-skeleton--header"/><div className="dashboard-skeleton workflow-loading"/></div>}

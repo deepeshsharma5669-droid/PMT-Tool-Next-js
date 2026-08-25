@@ -1,0 +1,3 @@
+export function EmptyState({title,description}:{title:string;description?:string}){return <div className="content-empty"><span>◇</span><h2>{title}</h2>{description&&<p>{description}</p>}</div>}
+export function PartialData(){return <div className="dashboard-alert" role="status">Some related information is unavailable for your account. The accessible workflow context is shown.</div>}
+export function ProgressBar({value,label=true}:{value:number;label?:boolean}){return <div className="progress-wrap">{label&&<span>{value}% complete</span>}<div className="progress-track"><i style={{width:`${value}%`}}/></div></div>}

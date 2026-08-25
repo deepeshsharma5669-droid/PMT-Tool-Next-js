@@ -1,0 +1,2 @@
+'use client'
+export default function DashboardError({reset}:{error:Error&{digest?:string};reset:()=>void}){return <div className="page-container"><section className="dashboard-route-error" role="alert"><span>!</span><h1>Dashboard unavailable</h1><p>We couldn't load your dashboard right now. Your account and data have not been changed.</p><button className="button button--primary" onClick={reset}>Try again</button></section></div>}

@@ -1,0 +1,1 @@
+'use client';export default function ErrorPage({reset}:{error:Error;reset:()=>void}){return <div className="page-container"><section className="dashboard-route-error"><span>!</span><h1>Deliverable unavailable</h1><p>We couldn't load this deliverable right now.</p><button className="button button--primary" onClick={reset}>Try again</button></section></div>}

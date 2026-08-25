@@ -1,0 +1,1 @@
+export default function Loading(){return <div className="page-container" aria-busy="true"><div className="dashboard-skeleton dashboard-skeleton--header"/><div className="campaign-grid">{[1,2,3].map(i=><div className="dashboard-skeleton hierarchy-skeleton" key={i}/>)}</div></div>}

@@ -1,0 +1,21 @@
+import{createClient}from'@/lib/supabase/server'
+export type Campaign={id:string;name:string;status:string;priority:string|null;deadline:string|null;client_id:string;clientName:string}
+export type Deliverable={id:string;campaign_id:string;name:string;type:string;status:string;client_revision:number}
+export type Stage={id:string;deliverable_id:string;name:string;dept:string;status:string;stage_order:number;rework_pending:boolean}
+export type HierarchyTask={id:string;stage_id:string;status:string;title:string;description:string;deadline:string|null;assignee_id:string|null;task_order:number;is_client_change:boolean;client_revision:number|null;iteration:number|null}
+export type HierarchyActivity={id:string;entity_type:string;entity_id:string;action:string;created_at:string;actorName:string}
+export type ClientDecision={id:string;deliverable_id:string;decision:string;client_revision:number;channel:string|null;contact_person:string|null;feedback:string|null;notes:string|null;recorded_at:string}
+export type HierarchyUser={id:string;name:string;role:string|null;dept:string|null;status:string};export type SubmissionOption={id:string;submission_id:string;name:string;link:string;note:string|null;decision:string};export type Submission={id:string;task_id:string;note:string|null;manager_feedback:string|null;decision_type:string|null;submitted_at:string;options:SubmissionOption[]};export type HierarchyData={campaigns:Campaign[];deliverables:Deliverable[];stages:Stage[];tasks:HierarchyTask[];activity:HierarchyActivity[];decisions:ClientDecision[];users:HierarchyUser[];submissions:Submission[];partial:boolean}
+export async function loadHierarchy():Promise<HierarchyData>{const db=await createClient();const[c,d,s,t,a,cd,u,sub,opt]=await Promise.all([
+ db.from('pmt_campaigns').select('id,name,status,priority,deadline,client_id,pmt_clients(name)').order('deadline'),
+ db.from('pmt_deliverables').select('id,campaign_id,name,type,status,client_revision'),
+ db.from('pmt_stages').select('id,deliverable_id,name,dept,status,stage_order,rework_pending').order('stage_order'),
+ db.from('pmt_tasks').select('id,stage_id,status,title,description,deadline,assignee_id,task_order,is_client_change,client_revision,iteration'),
+ db.from('pmt_activity').select('id,entity_type,entity_id,action,created_at,pmt_users(name)').order('created_at',{ascending:false}).limit(100),
+ db.from('pmt_client_decisions').select('id,deliverable_id,decision,client_revision,channel,contact_person,feedback,notes,recorded_at').order('recorded_at',{ascending:false}),db.from('pmt_users').select('id,name,role,dept,status'),db.from('pmt_submissions').select('id,task_id,note,manager_feedback,decision_type,submitted_at').order('submitted_at',{ascending:false}),db.from('pmt_submission_options').select('id,submission_id,name,link,note,decision')]);
+ const campaigns=(c.data??[]).map(row=>{const r=row as unknown as Omit<Campaign,'clientName'>&{pmt_clients:{name:string}|null};return{...r,clientName:r.pmt_clients?.name??'Client unavailable'}})
+ const activity=(a.data??[]).map(row=>{const r=row as unknown as Omit<HierarchyActivity,'actorName'>&{pmt_users:{name:string}|null};return{...r,actorName:r.pmt_users?.name??'PMT'}})
+ const options=(opt.data??[])as SubmissionOption[];const submissions=((sub.data??[])as Omit<Submission,'options'>[]).map(x=>({...x,options:options.filter(o=>o.submission_id===x.id)}));return{campaigns,deliverables:(d.data??[])as Deliverable[],stages:(s.data??[])as Stage[],tasks:(t.data??[])as HierarchyTask[],activity,decisions:(cd.data??[])as ClientDecision[],users:(u.data??[])as HierarchyUser[],submissions,partial:[c,d,s,t,a,cd,u,sub,opt].some(x=>!!x.error)}}
+export const campaignProgress=(id:string,d:HierarchyData)=>{const ds=d.deliverables.filter(x=>x.campaign_id===id);return ds.length?Math.round(ds.filter(x=>x.status==='COMPLETED').length/ds.length*100):0}
+export const deliverableProgress=(id:string,d:HierarchyData)=>{const ss=d.stages.filter(x=>x.deliverable_id===id);return ss.length?Math.round(ss.filter(x=>x.status==='COMPLETED').length/ss.length*100):0}
+export const stageProgress=(id:string,d:HierarchyData)=>{const ts=d.tasks.filter(x=>x.stage_id===id);return ts.length?Math.round(ts.filter(x=>x.status==='APPROVED').length/ts.length*100):0}

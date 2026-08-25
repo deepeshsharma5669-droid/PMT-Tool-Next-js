@@ -1,0 +1,9 @@
+import type{PmtUser}from'@/lib/auth/types';import type{HierarchyTask}from'@/lib/hierarchy/data'
+export const canCreateTask=(u:PmtUser,dept:string)=>u.role==='MANAGER'&&u.dept===dept
+export const canManageTask=(u:PmtUser,t:HierarchyTask,dept:string)=>canCreateTask(u,dept)&&!['APPROVED','IN_REVIEW'].includes(t.status)
+export const canAssignTask=canManageTask
+export const canChangeDeadline=canManageTask
+export const canReorderTask=(u:PmtUser,t:HierarchyTask,dept:string)=>canCreateTask(u,dept)&&!['APPROVED','IN_REVIEW'].includes(t.status)
+export const canExecuteTask=(u:PmtUser,t:HierarchyTask)=>u.id===t.assignee_id&&['TODO','IN_PROGRESS','CHANGES_REQUIRED'].includes(t.status)
+export const canSubmitTask=(u:PmtUser,t:HierarchyTask)=>u.id===t.assignee_id&&['IN_PROGRESS','CHANGES_REQUIRED'].includes(t.status)
+export const canReviewTask=(u:PmtUser,t:HierarchyTask,dept:string)=>u.role==='MANAGER'&&u.dept===dept&&t.status==='IN_REVIEW'
