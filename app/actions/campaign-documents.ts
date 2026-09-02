@@ -1,0 +1,6 @@
+'use server'
+import{requireAdmin}from'@/lib/auth/guards';import{createClient}from'@/lib/supabase/server';import{fail,ok,type ActionResult}from'./result'
+export type DocumentFileInput={file_name:string;file_url:string}
+export async function createCampaignDocument(campaignId:string,type:'IDEATION'|'BRIEF',title:string,content:string,files:DocumentFileInput[]):Promise<ActionResult<{documentId:string}>>{await requireAdmin();const db=await createClient(),{data,error}=await db.rpc('pmt_create_campaign_document',{p_campaign_id:campaignId,p_document_type:type,p_title:title,p_content:content,p_files:files});return error?fail(error):ok({documentId:data as string})}
+export async function updateCampaignDocument(id:string,title:string,content:string,files:DocumentFileInput[]):Promise<ActionResult<null>>{await requireAdmin();const db=await createClient(),{error}=await db.rpc('pmt_update_campaign_document',{p_document_id:id,p_title:title,p_content:content,p_files:files});return error?fail(error):ok(null)}
+export async function deleteCampaignDocument(id:string):Promise<ActionResult<null>>{await requireAdmin();const db=await createClient(),{error}=await db.rpc('pmt_delete_campaign_document',{p_document_id:id});return error?fail(error):ok(null)}

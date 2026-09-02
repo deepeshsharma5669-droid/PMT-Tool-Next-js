@@ -26,10 +26,14 @@ export async function assignRoleAndDept(formData: FormData) {
   }
 
   const supabase = await createClient()
-  const { error } = await supabase.from('pmt_users').update({ role, dept }).eq('id', userId)
+  const { error } = await supabase.rpc('pmt_assign_user_role_and_dept', {
+    p_user_id: userId,
+    p_role: role,
+    p_dept: dept,
+  })
   if (error) throw new Error(error.message)
 
-  revalidatePath('/admin/users')
+  revalidatePath('/users')
 }
 
 export async function activateUser(formData: FormData) {
@@ -40,15 +44,26 @@ export async function activateUser(formData: FormData) {
 
   const supabase = await createClient()
 
-  const { data: target } = await supabase.from('pmt_users').select('role, dept').eq('id', userId).maybeSingle()
+  const { data: target, error: targetError } = await supabase
+    .from('pmt_users')
+    .select('role, dept, status')
+    .eq('id', userId)
+    .maybeSingle()
+  if (targetError) throw new Error(targetError.message)
   if (!target?.role || !target?.dept) {
     throw new Error('Assign a role and department before activating this user.')
   }
 
-  const { error } = await supabase.from('pmt_users').update({ status: 'ACTIVE' }).eq('id', userId)
+  const { error } = target.status === 'PENDING'
+    ? await supabase.rpc('pmt_approve_pending_user', {
+        p_user_id: userId,
+        p_role: target.role,
+        p_dept: target.dept,
+      })
+    : await supabase.rpc('pmt_activate_user', { p_user_id: userId })
   if (error) throw new Error(error.message)
 
-  revalidatePath('/admin/users')
+  revalidatePath('/users')
 }
 
 export async function deactivateUser(formData: FormData) {
@@ -61,8 +76,8 @@ export async function deactivateUser(formData: FormData) {
   }
 
   const supabase = await createClient()
-  const { error } = await supabase.from('pmt_users').update({ status: 'INACTIVE' }).eq('id', userId)
+  const { error } = await supabase.rpc('pmt_deactivate_user', { p_user_id: userId })
   if (error) throw new Error(error.message)
 
-  revalidatePath('/admin/users')
+  revalidatePath('/users')
 }

@@ -1,53 +1,6 @@
 'use server'
-
-import { createClient } from '@/lib/supabase/server'
-import { requirePmtUser } from '@/lib/auth/session'
-import { ok, fail, type ActionResult } from './result'
-
-export type DeliverableInput = { name: string; type: string }
-
-export async function createCampaign(
-  clientId: string,
-  name: string,
-  deadline: string,
-  deliverables: DeliverableInput[]
-): Promise<ActionResult<{ campaignId: string }>> {
-  await requirePmtUser()
-  const supabase = await createClient()
-  const { data, error } = await supabase.rpc('pmt_create_campaign', {
-    p_client_id: clientId,
-    p_name: name,
-    p_deadline: deadline,
-    p_deliverables: deliverables,
-  })
-  if (error) return fail(error)
-  return ok({ campaignId: data as string })
-}
-
-export async function updateCampaign(
-  campaignId: string,
-  name: string,
-  priority: string,
-  deadline: string,
-  status: string
-): Promise<ActionResult<null>> {
-  await requirePmtUser()
-  const supabase = await createClient()
-  const { error } = await supabase.rpc('pmt_update_campaign', {
-    p_campaign_id: campaignId,
-    p_name: name,
-    p_priority: priority,
-    p_deadline: deadline,
-    p_status: status,
-  })
-  if (error) return fail(error)
-  return ok(null)
-}
-
-export async function archiveCampaign(campaignId: string): Promise<ActionResult<null>> {
-  await requirePmtUser()
-  const supabase = await createClient()
-  const { error } = await supabase.rpc('pmt_archive_campaign', { p_campaign_id: campaignId })
-  if (error) return fail(error)
-  return ok(null)
-}
+import{createClient}from'@/lib/supabase/server';import{requireAdmin}from'@/lib/auth/guards';import{ok,fail,type ActionResult}from'./result'
+export async function updateCampaign(id:string,name:string,priority:string,deadline:string,status:string):Promise<ActionResult<null>>{await requireAdmin();const db=await createClient(),{error}=await db.rpc('pmt_update_campaign',{p_campaign_id:id,p_name:name,p_priority:priority,p_deadline:deadline||null,p_status:status});return error?fail(error):ok(null)}
+export async function archiveCampaign(id:string):Promise<ActionResult<null>>{await requireAdmin();const db=await createClient(),{error}=await db.rpc('pmt_archive_campaign',{p_campaign_id:id});return error?fail(error):ok(null)}
+export async function addCampaignPoc(campaignId:string,pocId:string,isPrimary:boolean):Promise<ActionResult<null>>{await requireAdmin();const db=await createClient(),{error}=await db.rpc('pmt_add_campaign_poc',{p_campaign_id:campaignId,p_client_poc_id:pocId,p_is_primary:isPrimary});return error?fail(error):ok(null)}
+export async function removeCampaignPoc(campaignId:string,pocId:string):Promise<ActionResult<null>>{await requireAdmin();const db=await createClient(),{error}=await db.rpc('pmt_remove_campaign_poc',{p_campaign_id:campaignId,p_client_poc_id:pocId});return error?fail(error):ok(null)}

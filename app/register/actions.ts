@@ -1,6 +1,7 @@
 'use server'
 
 import { redirect } from 'next/navigation'
+import { headers } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 
 function fail(msg: string): never {
@@ -30,9 +31,21 @@ export async function register(formData: FormData) {
     fail('Password must be at least 8 characters.')
   }
 
+  const h = await headers()
+  const host = h.get('x-forwarded-host') ?? h.get('host')
+  const protocol = h.get('x-forwarded-proto') ?? 'http'
+  const origin = `${protocol}://${host}`
+
   const supabase = await createClient()
 
-  const { data: signUpData, error: signUpError } = await supabase.auth.signUp({ email, password })
+  const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: `${origin}/auth/callback?next=/register/success`,
+      data: { pmt_registration_name: name },
+    },
+  })
   if (signUpError) {
     fail(signUpError.message)
   }
@@ -42,35 +55,12 @@ export async function register(formData: FormData) {
     fail('Could not create account. Please try again.')
   }
 
-  // If an Admin already pre-created a placeholder pmt_users row for this
-  // email (not a flow this phase builds, but the column supports it), link
-  // to it instead of creating a duplicate. Otherwise, create a fresh
-  // PENDING profile with no role/dept.
-  const { data: existing } = await supabase
-    .from('pmt_users')
-    .select('id, auth_user_id')
-    .eq('email', email)
-    .maybeSingle()
-
-  if (existing?.auth_user_id) {
-    fail('An account with this email already exists.')
-  } else if (existing) {
-    const { error: linkError } = await supabase
-      .from('pmt_users')
-      .update({ auth_user_id: authUserId, name })
-      .eq('id', existing.id)
-    if (linkError) fail('Could not complete registration. Please contact an administrator.')
-  } else {
-    const { error: insertError } = await supabase.from('pmt_users').insert({
-      id: authUserId,
-      auth_user_id: authUserId,
-      name,
-      email,
-      status: 'PENDING',
-      role: null,
-      dept: null,
-    })
-    if (insertError) fail('Could not complete registration. Please contact an administrator.')
+  // Migration 007 creates the PENDING PMT profile in the Auth insert
+  // transaction. An immediate session lets us verify/reconcile that invariant;
+  // confirmed-email callbacks do the same.
+  if (signUpData.session) {
+    const { error: provisionError } = await supabase.rpc('pmt_ensure_current_user_profile')
+    if (provisionError) fail('Could not complete registration. Please contact an administrator.')
   }
 
   redirect('/register/success')

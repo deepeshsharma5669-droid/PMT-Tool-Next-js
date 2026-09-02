@@ -5,5 +5,5 @@ export const canAssignTask=canManageTask
 export const canChangeDeadline=canManageTask
 export const canReorderTask=(u:PmtUser,t:HierarchyTask,dept:string)=>canCreateTask(u,dept)&&!['APPROVED','IN_REVIEW'].includes(t.status)
 export const canExecuteTask=(u:PmtUser,t:HierarchyTask)=>u.id===t.assignee_id&&['TODO','IN_PROGRESS','CHANGES_REQUIRED'].includes(t.status)
-export const canSubmitTask=(u:PmtUser,t:HierarchyTask)=>u.id===t.assignee_id&&['IN_PROGRESS','CHANGES_REQUIRED'].includes(t.status)
-export const canReviewTask=(u:PmtUser,t:HierarchyTask,dept:string)=>u.role==='MANAGER'&&u.dept===dept&&t.status==='IN_REVIEW'
+export const canSubmitTask=(u:PmtUser,t:HierarchyTask)=>u.status==='ACTIVE'&&u.id===t.assignee_id&&t.status==='IN_PROGRESS'&&t.operational_status==='ACTIVE'
+export const canReviewTask=(u:PmtUser,t:HierarchyTask,dept:string)=>u.status==='ACTIVE'&&u.role==='MANAGER'&&u.dept===dept&&u.id===t.reviewer_id&&t.status==='IN_REVIEW'&&t.operational_status==='ACTIVE'

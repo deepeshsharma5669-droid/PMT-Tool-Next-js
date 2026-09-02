@@ -18,6 +18,15 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient()
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
+      if (next === '/register/success') {
+        const { error: provisionError } = await supabase.rpc('pmt_ensure_current_user_profile')
+        if (provisionError) {
+          return NextResponse.redirect(
+            `${origin}/login?error=${encodeURIComponent('Could not complete registration. Please contact an administrator.')}`
+          )
+        }
+      }
+
       return NextResponse.redirect(`${origin}${next}`)
     }
   }
